@@ -1,9 +1,9 @@
 {
-	"name": "js-df",
+	"name": "jpandas",
 	"version": "1.0.0",
 	"description": "A lightweight JavaScript package for working with tabular data, inspired by pandas in Python.",
 	"keywords": [
-		"js-df",
+		"jpandas",
 		"pandas",
 		"dataFrame",
 		"series",
@@ -13,7 +13,7 @@
 		"indexing",
 		"Rajnish Singh"
 	],
-	"repository": "rajnish93/js-df",
+	"repository": "rajnish93/jpandas",
 	"author": {
 		"name": "Rajnish Singh",
 		"url": "https://rajnish.app/"

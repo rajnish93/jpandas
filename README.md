@@ -7,14 +7,14 @@
 
 📟 A lightweight JavaScript package for working with tabular data, inspired by pandas in Python..
 
-[![npm version](https://img.shields.io/npm/v/js-df.svg?style=flat-square)](https://www.npmjs.com/package/js-df)
-[![DOWNLOADS](https://img.shields.io/npm/dt/js-df.svg?label=DOWNLOADS&style=flat)](https://www.npmjs.com/package/js-df)
+[![npm version](https://img.shields.io/npm/v/jpandas.svg?style=flat-square)](https://www.npmjs.com/package/jpandas)
+[![DOWNLOADS](https://img.shields.io/npm/dt/jpandas.svg?label=DOWNLOADS&style=flat)](https://www.npmjs.com/package/jpandas)
 
 </h4>
 
 <br>
 
-# js-df
+# jpandas
 
 -   📦 Easy creation of tabular data structures in JavaScript.
 -   📦 Provides a DataFrame class inspired by pandas in Python.
@@ -25,11 +25,11 @@
 ## Installation
 
 ```sh
-npm install js-df
+npm install jpandas
 
 or
 
-yarn add js-df
+yarn add jpandas
 ```
 
 <br>
