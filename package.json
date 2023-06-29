@@ -1,0 +1,31 @@
+{
+	"name": "js-df",
+	"version": "1.0.0",
+	"description": "A lightweight JavaScript package for working with tabular data, inspired by pandas in Python.",
+	"keywords": [
+		"js-df",
+		"pandas",
+		"dataFrame",
+		"series",
+		"data analysis",
+		"data-manipulation",
+		"analysis",
+		"indexing",
+		"Rajnish Singh"
+	],
+	"repository": "rajnish93/js-df",
+	"author": {
+		"name": "Rajnish Singh",
+		"url": "https://rajnish.app/"
+	},
+	"license": "BSD-3-Clause",
+	"main": "src/index.js",
+	"devDependencies": {
+		"jest": "^29.5.0",
+		"prettier": "^2.8.8"
+	},
+	"scripts": {
+		"test": "jest",
+		"format": "prettier --write \"./**/*.{js,json}\""
+	}
+}
