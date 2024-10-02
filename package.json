@@ -13,7 +13,10 @@
 		"indexing",
 		"Rajnish Singh"
 	],
-	"repository": "rajnish93/jpandas",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/rajnish93/jpandas.git"
+	},
 	"author": {
 		"name": "Rajnish Singh",
 		"url": "https://rajnish.app/"
