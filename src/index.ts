@@ -292,4 +292,50 @@ export default class DataFrame<T extends { [key: string]: any }> {
 		) as (keyof U)[];
 		return new DataFrame<U>(transformedData, null, transformedColumns);
 	}
+
+	mean<K extends keyof T>(column: K): number | null {
+		if (!this._data || this._data.length === 0) {
+			return null;
+		}
+		const values = this._data.map(row => row[column]);
+		if (values.some(value => value === null || value === undefined)) {
+			return null;
+		}
+
+		let sum = 0;
+		let count = 0;
+
+		for (let i = 0; i < values.length; i++) {
+			const value = values[i];
+
+			try {
+				if (value === null || value === undefined) {
+					throw new Error(
+						`Data at index ${i} contains null or undefined value in column '${String(
+							column
+						)}'.`
+					);
+				} else if (!Number.isFinite(value)) {
+					throw new Error(
+						`Data at index ${i} contains non-numeric value '${value}' in column '${String(
+							column
+						)}'.`
+					);
+				} else {
+					sum += value as number;
+					count++;
+				}
+			} catch (error: any) {
+				throw error.message;
+			}
+		}
+
+		if (count === 0) {
+			throw new Error(
+				`No numeric values found in column '${String(column)}'.`
+			);
+		}
+
+		return sum / count;
+	}
 }

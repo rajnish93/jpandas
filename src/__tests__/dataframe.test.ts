@@ -166,4 +166,34 @@ describe('DataFrame', () => {
 			expect(transformedDf.getValue(1, 'Age')).toBe(22);
 		});
 	});
+
+	describe('Calculate mean of a column', () => {
+		it('should correctly calculate mean', () => {
+			const data = [
+				{ Name: 'Ankit', Age: 23, University: 'BHU' },
+				{ Name: 'Aishwarya', Age: 21, University: 'JNU' },
+				{ Name: 'Shaurya', Age: 22, University: 'DU' }
+			];
+			const df = new DataFrame(data);
+			const meanAge = df.mean('Age');
+			expect(meanAge).toBe(22);
+		});
+
+		it('should return null for empty data', () => {
+			const df = new DataFrame([]);
+			const meanAge = df.mean('Age');
+			expect(meanAge).toBeNull();
+		});
+
+		it('should return null if column contains non-numeric values', () => {
+			const data = [
+				{ Name: 'Ankit', Age: 'Twenty-Three', University: 'BHU' },
+				{ Name: 'Aishwarya', Age: 21, University: 'JNU' }
+			];
+			const df = new DataFrame(data);
+			expect(() => df.mean('Age')).toThrow(
+				"Data at index 0 contains non-numeric value 'Twenty-Three' in column 'Age'."
+			);
+		});
+	});
 });
