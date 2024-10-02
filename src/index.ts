@@ -265,4 +265,18 @@ export default class DataFrame<T extends { [key: string]: any }> {
 		});
 		return result;
 	}
+
+	rename(columns: { [key: string]: string }): DataFrame<T> {
+		if (!this._data) {
+			return new DataFrame<T>([]);
+		}
+		const renamedData = this._data.map(row => {
+			const renamedRow: { [key: string]: any } = {};
+			Object.keys(row).forEach(key => {
+				renamedRow[columns[key] || key] = row[key];
+			});
+			return renamedRow;
+		});
+		return new DataFrame(renamedData as T[]);
+	}
 }

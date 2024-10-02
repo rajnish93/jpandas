@@ -116,4 +116,36 @@ describe('DataFrame', () => {
 			console.log('result:', result.head());
 		});
 	});
+
+	describe('DataFrame.rename', () => {
+		it('renames columns correctly', () => {
+			const data = [
+				{ a: 1, b: 2, c: 3 },
+				{ a: 4, b: 5, c: 6 }
+			];
+			const df = new DataFrame(data);
+			const renamedDf = df.rename({ a: 'x', b: 'y' });
+
+			expect(renamedDf.getColumns()).toEqual(['x', 'y', 'c']);
+			expect(renamedDf.getData()).toEqual([
+				{ x: 1, y: 2, c: 3 },
+				{ x: 4, y: 5, c: 6 }
+			]);
+		});
+
+		it('leaves columns unchanged if no rename is specified', () => {
+			const data = [
+				{ a: 1, b: 2, c: 3 },
+				{ a: 4, b: 5, c: 6 }
+			];
+			const df = new DataFrame(data);
+			const renamedDf = df.rename({});
+
+			expect(renamedDf.getColumns()).toEqual(['a', 'b', 'c']);
+			expect(renamedDf.getData()).toEqual([
+				{ a: 1, b: 2, c: 3 },
+				{ a: 4, b: 5, c: 6 }
+			]);
+		});
+	});
 });
