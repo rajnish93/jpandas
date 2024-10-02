@@ -1,6 +1,6 @@
 {
 	"name": "jpandas",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"description": "A lightweight JavaScript package for working with tabular data, inspired by pandas in Python.",
 	"keywords": [
 		"jpandas",
@@ -21,10 +21,15 @@
 	"license": "BSD-3-Clause",
 	"main": "src/index.js",
 	"devDependencies": {
-		"jest": "^29.5.0",
-		"prettier": "^2.8.8"
+		"@types/jest": "^29.5.12",
+		"@types/node": "^22.5.4",
+		"jest": "^29.7.0",
+		"prettier": "^2.8.8",
+		"ts-jest": "^29.2.5",
+		"typescript": "^5.5.4"
 	},
 	"scripts": {
+		"build": "tsc",
 		"test": "jest",
 		"format": "prettier --write \"./**/*.{js,json}\""
 	}
