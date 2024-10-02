@@ -279,4 +279,17 @@ export default class DataFrame<T extends { [key: string]: any }> {
 		});
 		return new DataFrame(renamedData as T[]);
 	}
+
+	transform<U extends { [key: string]: any }>(
+		fn: (row: T) => U
+	): DataFrame<U> {
+		if (!this._data) {
+			return new DataFrame<U>(null);
+		}
+		const transformedData = this._data.map(fn);
+		const transformedColumns = Object.keys(
+			transformedData[0] || {}
+		) as (keyof U)[];
+		return new DataFrame<U>(transformedData, null, transformedColumns);
+	}
 }

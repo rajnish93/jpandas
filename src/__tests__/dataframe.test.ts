@@ -148,4 +148,22 @@ describe('DataFrame', () => {
 			]);
 		});
 	});
+
+	describe('Transform DataFrame', () => {
+		it('should correctly transform DataFrame', () => {
+			const data = [
+				{ Name: 'Ankit', Age: 23, University: 'BHU' },
+				{ Name: 'Aishwarya', Age: 21, University: 'JNU' }
+			];
+			const df = new DataFrame(data);
+			const transformedDf = df.transform(row => ({
+				FullName: row.Name,
+				Age: row.Age + 1
+			}));
+			expect(transformedDf.getRowCount()).toBe(2);
+			expect(transformedDf.getColumnCount()).toBe(2);
+			expect(transformedDf.getValue(0, 'FullName')).toBe('Ankit');
+			expect(transformedDf.getValue(1, 'Age')).toBe(22);
+		});
+	});
 });
