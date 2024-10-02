@@ -15,6 +15,7 @@ describe('DataFrame', () => {
 			expect(df.getValue(0, 0)).toBe(1);
 			expect(df.getValue(1, 1)).toBe(5);
 			expect(df.getValue(2, 2)).toBe(9);
+			expect(df.head(2).getData()?.[1]).toEqual([2, 5, 8]);
 		});
 	});
 
@@ -33,6 +34,11 @@ describe('DataFrame', () => {
 			expect(df.getValue(0, 'Name')).toBe('Ankit');
 			expect(df.getValue(1, 'Age')).toBe(21);
 			expect(df.getValue(2, 'University')).toBe('DU');
+			expect(df.head(2).getData()?.[1]).toEqual({
+				Age: 21,
+				Name: 'Aishwarya',
+				University: 'JNU'
+			});
 		});
 	});
 
@@ -45,6 +51,11 @@ describe('DataFrame', () => {
 			expect(df.getValue(0, 'Name')).toBe('Ankit');
 			expect(df.getValue(1, 'Age')).toBe(21);
 			expect(df.getValue(2, 'University')).toBe('DU');
+			expect(df.head(2).getData()?.[1]).toEqual({
+				Age: 21,
+				Name: 'Aishwarya',
+				University: 'JNU'
+			});
 		});
 	});
 
@@ -65,6 +76,11 @@ describe('DataFrame', () => {
 			expect(df.getValue(0, 'Name')).toBe('Ankit');
 			expect(df.getValue(1, 'Age')).toBe(21);
 			expect(df.getValue(2, 'University')).toBe('DU');
+			expect(df.head(2).getData()?.[1]).toEqual({
+				Age: 21,
+				Name: 'Aishwarya',
+				University: 'JNU'
+			});
 		});
 	});
 });

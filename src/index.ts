@@ -184,4 +184,30 @@ export default class DataFrame<T extends { [key: string]: any }> {
 	shape(): [number, number] {
 		return [this.getRowCount(), this.getColumnCount()];
 	}
+
+	head(rows: number = 5): DataFrame<T> {
+		const dataToDisplay = this._data?.slice(0, rows);
+		const tableData = dataToDisplay?.map(row => {
+			const rowData: { [key: string]: any } = {};
+			this._columns?.forEach(column => {
+				rowData[String(column)] = row[column];
+			});
+			return rowData;
+		});
+		console.table(tableData);
+		return this;
+	}
+
+	tail(rows: number = 5): DataFrame<T> {
+		const dataToDisplay = this._data?.slice(-rows);
+		const tableData = dataToDisplay?.map(row => {
+			const rowData: { [key: string]: any } = {};
+			this._columns?.forEach(column => {
+				rowData[String(column)] = row[column];
+			});
+			return rowData;
+		});
+		console.table(tableData);
+		return this;
+	}
 }
