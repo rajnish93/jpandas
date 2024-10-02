@@ -210,4 +210,40 @@ export default class DataFrame<T extends { [key: string]: any }> {
 		console.table(tableData);
 		return this;
 	}
+
+	select<K extends keyof T>(columns: K[]): DataFrame<T> {
+		if (!this._data) {
+			return new DataFrame<T>([]);
+		}
+		const selectedData = this._data.map(row => {
+			const selectedRow: { [key: string]: any } = {};
+			columns.forEach((column: K) => {
+				selectedRow[column as string] = row[column as string];
+			});
+			return selectedRow;
+		});
+		return new DataFrame(selectedData as T[]);
+	}
+
+	filter(predicate: (row: T) => boolean): DataFrame<T> {
+		if (!this._data) {
+			return new DataFrame<T>([]);
+		}
+		const filteredData = this._data.filter(predicate);
+		return new DataFrame(filteredData);
+	}
+
+	assign<K extends keyof T | string>(
+		column: K,
+		value: (row: T) => any
+	): DataFrame<T> {
+		if (!this._data) {
+			return new DataFrame<T>([]);
+		}
+		const assignedData = this._data.map(row => ({
+			...row,
+			[column as string]: value(row)
+		}));
+		return new DataFrame(assignedData);
+	}
 }
