@@ -246,4 +246,23 @@ export default class DataFrame<T extends { [key: string]: any }> {
 		}));
 		return new DataFrame(assignedData);
 	}
+
+	groupBy<K extends keyof T>(column: K): { [key: string]: DataFrame<T> } {
+		if (!this._data) {
+			return {};
+		}
+		const groupedData: { [key: string]: T[] } = {};
+		this._data.forEach(row => {
+			const key = String(row[column]);
+			if (!groupedData[key]) {
+				groupedData[key] = [];
+			}
+			groupedData[key].push(row);
+		});
+		const result: { [key: string]: DataFrame<T> } = {};
+		Object.keys(groupedData).forEach(key => {
+			result[key] = new DataFrame(groupedData[key]);
+		});
+		return result;
+	}
 }

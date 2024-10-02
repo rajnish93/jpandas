@@ -83,4 +83,37 @@ describe('DataFrame', () => {
 			});
 		});
 	});
+
+	describe('GroupBy DataFrame', () => {
+		it('should correctly group DataFrame by column', () => {
+			const data = [
+				{ Name: 'Ankit', Age: 23, University: 'BHU' },
+				{ Name: 'Aishwarya', Age: 21, University: 'JNU' },
+				{ Name: 'Shaurya', Age: 22, University: 'DU' },
+				{ Name: 'Shivangi', Age: 21, University: 'BHU' }
+			];
+			const df = new DataFrame(data);
+			const grouped = df.groupBy('University');
+			expect(Object.keys(grouped || {}).length).toBe(3);
+			console.log("grouped?['BHU']::", df.groupBy('University'));
+
+			const df1 = new DataFrame([
+				{ name: 'John', age: 25, country: 'USA' },
+				{ name: 'Alice', age: 30, country: 'UK' },
+				{ name: 'Bob', age: 35, country: 'USA' }
+			]);
+
+			const result = df1
+				.filter(row => row.age > 30)
+				.select(['name', 'age'])
+				.assign('ageGroup', row => (row.age > 30 ? 'old' : 'young'));
+
+			expect(result.head().getData()?.[0]).toEqual({
+				name: 'Bob',
+				age: 35,
+				ageGroup: 'old'
+			});
+			console.log('result:', result.head());
+		});
+	});
 });
