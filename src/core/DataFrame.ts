@@ -120,6 +120,99 @@ export class DataFrame {
 		return new DataFrame(projected);
 	}
 
+	dropna(options?: { axis?: 0 | 1; subset?: string[] }): DataFrame {
+		const axis = options?.axis ?? 0; // 0 rows, 1 columns
+		if (axis === 0) {
+			const subset = options?.subset ?? this.columns;
+			const rows = this.rows.filter((r) => subset.every((c) => !DataFrame.isMissing(r[c])));
+			return new DataFrame(rows);
+		}
+		// drop columns with any missing
+		const keepCols = this.columns.filter((c) => this.rows.every((r) => !DataFrame.isMissing(r[c])));
+		return this.select(keepCols);
+	}
+
+	fillna(value: Primitive, options?: { subset?: string[] }): DataFrame {
+		const subset = options?.subset ?? this.columns;
+		const rows = this.rows.map((r) => {
+			const out: Row = { ...r };
+			for (const c of subset) if (DataFrame.isMissing(out[c])) out[c] = value;
+			return out;
+		});
+		return new DataFrame(rows);
+	}
+
+	drop(columns?: string[] | { columns?: string[]; index?: number[] }): DataFrame {
+		if (Array.isArray(columns)) {
+			const colsToDrop = new Set(columns);
+			const rows = this.rows.map((r) => {
+				const o: Row = {};
+				for (const k of Object.keys(r)) if (!colsToDrop.has(k)) o[k] = r[k];
+				return o;
+			});
+			return new DataFrame(rows);
+		}
+		const cols = new Set(columns?.columns ?? []);
+		const idx = new Set(columns?.index ?? []);
+		const filteredRows = this.rows.filter((_, i) => !idx.has(i)).map((r) => {
+			const o: Row = {};
+			for (const k of Object.keys(r)) if (!cols.has(k)) o[k] = r[k];
+			return o;
+		});
+		return new DataFrame(filteredRows);
+	}
+
+	rename(mapper: Record<string, string>): DataFrame {
+		const rows = this.rows.map((r) => {
+			const o: Row = {};
+			for (const [k, v] of Object.entries(r)) o[mapper[k] ?? k] = v;
+			return o;
+		});
+		return new DataFrame(rows);
+	}
+
+	assign(newCols: Record<string, (row: Row, index: number) => Primitive | Primitive>): DataFrame {
+		const rows = this.rows.map((r, i) => {
+			const o: Row = { ...r };
+			for (const [k, fn] of Object.entries(newCols)) {
+				const val = typeof fn === 'function' ? (fn as (row: Row, index: number) => Primitive)(r, i) : (fn as Primitive);
+				o[k] = val;
+			}
+			return o;
+		});
+		return new DataFrame(rows);
+	}
+
+	apply(fn: (row: Row, index: number) => Row): DataFrame {
+		return new DataFrame(this.rows.map((r, i) => fn({ ...r }, i)));
+	}
+
+	sortValues(by: string | string[], options?: { ascending?: boolean | boolean[]; naPosition?: 'first' | 'last' }): DataFrame {
+		const cols = Array.isArray(by) ? by : [by];
+		const ascending = Array.isArray(options?.ascending) ? options!.ascending as boolean[] : [options?.ascending ?? true];
+		const naPosition = options?.naPosition ?? 'last';
+		const rows = [...this.rows];
+		rows.sort((a, b) => {
+			for (let i = 0; i < cols.length; i++) {
+				const col = cols[i]!;
+				const asc = ascending[i] ?? ascending[ascending.length - 1] ?? true;
+				const av = a[col];
+				const bv = b[col];
+				const aMissing = DataFrame.isMissing(av);
+				const bMissing = DataFrame.isMissing(bv);
+				if (aMissing || bMissing) {
+					if (aMissing && bMissing) continue;
+					const dir = naPosition === 'first' ? -1 : 1;
+					return aMissing ? dir : -dir;
+				}
+				const cmp = DataFrame.compare(av, bv);
+				if (cmp !== 0) return asc ? cmp : -cmp;
+			}
+			return 0;
+		});
+		return new DataFrame(rows);
+	}
+
 	get length(): number {
 		return this.rows.length;
 	}
@@ -150,6 +243,18 @@ export class DataFrame {
 		return out;
 	}
 
+	median(column: string): number | null {
+		return (this.col(column) as unknown as Series<number>).median();
+	}
+
+	mode(column: string): Primitive[] {
+		return this.col(column).mode();
+	}
+
+	valueCounts(column: string, options?: { normalize?: boolean; sort?: boolean; ascending?: boolean; dropna?: boolean }) {
+		return this.col(column).valueCounts(options);
+	}
+
 	toJSON(): Row[] {
 		return this.rows.map((r) => ({ ...r }));
 	}
@@ -162,6 +267,16 @@ export class DataFrame {
 		const s = start >= 0 ? start : Math.max(0, len + start);
 		const e = end >= 0 ? Math.min(end, len) : len + end;
 		return [Math.max(0, s), Math.max(0, Math.min(len, e))];
+	}
+
+	private static isMissing(v: Primitive): boolean {
+		return v === null || v === undefined || (typeof v === 'number' && Number.isNaN(v));
+	}
+
+	private static compare(a: Primitive, b: Primitive): number {
+		if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime();
+		if (typeof a === 'number' && typeof b === 'number') return a - b;
+		return String(a).localeCompare(String(b));
 	}
 }
 

@@ -84,6 +84,76 @@ export class Series<T extends Primitive = Primitive> {
 		};
 	}
 
+	map<U extends Primitive>(fn: (value: T, index: number) => U): Series<U> {
+		const out: U[] = this.data.map((v, i) => fn(v, i));
+		return new Series<U>(out, this.name);
+	}
+
+	dropna(): Series<T> {
+		const out = this.data.filter((v) => !Series.isMissing(v));
+		return new Series<T>(out, this.name);
+	}
+
+	fillna(value: T): Series<T> {
+		const out = this.data.map((v) => (Series.isMissing(v) ? value : v));
+		return new Series<T>(out, this.name);
+	}
+
+	median(): number | null {
+		const numeric = this.data.filter((v) => typeof v === 'number' && !Number.isNaN(v as number)) as number[];
+		if (numeric.length === 0) return null;
+		numeric.sort((a, b) => a - b);
+		const mid = Math.floor(numeric.length / 2);
+		if (numeric.length % 2 === 0) {
+			const a = numeric[mid - 1]!;
+			const b = numeric[mid]!;
+			return (a + b) / 2;
+		}
+		return numeric[mid]!;
+	}
+
+	mode(): T[] {
+		const counts = new Map<string, { value: T; count: number }>();
+		for (const v of this.data) {
+			const key = Series.keyOf(v);
+			const entry = counts.get(key);
+			if (entry) entry.count += 1; else counts.set(key, { value: v, count: 1 });
+		}
+		let max = 0;
+		for (const { count } of counts.values()) max = Math.max(max, count);
+		return Array.from(counts.values()).filter((e) => e.count === max).map((e) => e.value);
+	}
+
+	valueCounts(options?: { normalize?: boolean; sort?: boolean; ascending?: boolean; dropna?: boolean }): Array<{ value: T; count: number; proportion?: number }>{
+		const normalize = options?.normalize ?? false;
+		const sort = options?.sort ?? true;
+		const ascending = options?.ascending ?? false;
+		const dropna = options?.dropna ?? true;
+		const counts = new Map<string, { value: T; count: number }>();
+		for (const v of this.data) {
+			if (dropna && Series.isMissing(v)) continue;
+			const key = Series.keyOf(v);
+			const entry = counts.get(key);
+			if (entry) entry.count += 1; else counts.set(key, { value: v, count: 1 });
+		}
+		let arr = Array.from(counts.values());
+		if (sort) arr.sort((a, b) => (ascending ? a.count - b.count : b.count - a.count));
+		if (normalize) {
+			const total = arr.reduce((s, e) => s + e.count, 0) || 1;
+			return arr.map((e) => ({ ...e, proportion: e.count / total }));
+		}
+		return arr;
+	}
+
+	private static isMissing(v: Primitive): boolean {
+		return v === null || v === undefined || (typeof v === 'number' && Number.isNaN(v));
+	}
+
+	private static keyOf(v: Primitive): string {
+		if (v instanceof Date) return `__date__:${v.toISOString()}`;
+		return String(v);
+	}
+
 	private normalizeIndex(i: number): number {
 		const len = this.data.length;
 		return i >= 0 ? i : Math.max(0, len + i);
