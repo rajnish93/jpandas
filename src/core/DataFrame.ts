@@ -107,6 +107,19 @@ export class DataFrame {
 		return new DataFrame(this.rows.slice(s, e));
 	}
 
+	// JS-friendly aliases
+	getRowsByIndex(start: number, end?: number): DataFrame {
+		return this.iloc(start, end);
+	}
+
+	getRowsByCondition(fn: (row: Row, index: number) => boolean): DataFrame {
+		return new DataFrame(this.rows.filter((r, i) => fn(r, i)));
+	}
+
+	filter(fn: (row: Row, index: number) => boolean): DataFrame {
+		return this.getRowsByCondition(fn);
+	}
+
 	col(name: string): Series<Primitive> {
 		return new Series(this.rows.map((r) => r[name]));
 	}
@@ -118,6 +131,19 @@ export class DataFrame {
 			return o;
 		});
 		return new DataFrame(projected);
+	}
+
+	// Column-wise mapper
+	mapColumns(fn: (value: Primitive, column: string, row: Row, rowIndex: number) => Primitive, columns?: string[]): DataFrame {
+		const cols = columns ?? this.columns;
+		const rows = this.rows.map((r, i) => {
+			const o: Row = { ...r };
+			for (const c of cols) {
+				o[c] = fn(r[c], c, r, i);
+			}
+			return o;
+		});
+		return new DataFrame(rows);
 	}
 
 	dropna(options?: { axis?: 0 | 1; subset?: string[] }): DataFrame {
@@ -259,6 +285,15 @@ export class DataFrame {
 		return this.rows.map((r) => ({ ...r }));
 	}
 
+	// JS-friendly aliases
+	static fromArray(rows: Row[] | ReadonlyArray<Row>): DataFrame {
+		return DataFrame.fromJSON(rows);
+	}
+
+	toObject(): Row[] {
+		return this.toJSON();
+	}
+
 	toCSV(options?: { delimiter?: string; header?: boolean; quote?: 'auto' | 'always' | 'never' }): string {
 		const delimiter = options?.delimiter ?? ',';
 		const header = options?.header ?? true;
@@ -301,6 +336,24 @@ export class DataFrame {
 		if (a instanceof Date && b instanceof Date) return a.getTime() - b.getTime();
 		if (typeof a === 'number' && typeof b === 'number') return a - b;
 		return String(a).localeCompare(String(b));
+	}
+
+	getColumnTypes(): Record<string, string> {
+		const types: Record<string, string> = {};
+		for (const c of this.columns) {
+			const seen = new Set<string>();
+			for (const r of this.rows) {
+				const v = r[c];
+				if (v === null) { seen.add('null'); continue; }
+				if (v === undefined) { seen.add('undefined'); continue; }
+				if (v instanceof Date) { seen.add('date'); continue; }
+				seen.add(typeof v);
+			}
+			if (seen.size === 0) types[c] = 'undefined';
+			else if (seen.size === 1) types[c] = Array.from(seen)[0]!;
+			else types[c] = 'mixed';
+		}
+		return types;
 	}
 
 	// ===== GroupBy =====
