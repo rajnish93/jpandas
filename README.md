@@ -1,13 +1,9 @@
-<h4 align="center">
-
-📟 A lightweight JavaScript package for working with tabular data, inspired by pandas in Python..
+# jpandas
 
 [![npm version](https://img.shields.io/npm/v/jpandas.svg?style=flat-square)](https://www.npmjs.com/package/jpandas)
 [![DOWNLOADS](https://img.shields.io/npm/dt/jpandas.svg?label=DOWNLOADS&style=flat)](https://www.npmjs.com/package/jpandas)
 
-</h4>
-
-# jpandas
+📟 A lightweight TypeScript library for tabular data manipulation, inspired by Python's pandas. Supports DataFrame/Series APIs and works in both Node.js and the browser.
 
 - 📦 Easy creation of tabular data structures in JavaScript.
 - 📦 Provides a DataFrame class inspired by pandas in Python.
@@ -15,21 +11,41 @@
 
 ## Table of Contents
 
-- [Installation](#installation)
-- [Usage](#usage)
-- [Creating DataFrames](#creating-dataframes)
-  - [From an Array](#from-an-array)
-  - [From an Object](#from-an-object)
-  - [From CSV String](#from-csv-string)
-  - [From JSON String](#from-json-string)
-- [DataFrame Operations](#dataframe-operations)
-  - [Group By](#group-by)
-  - [Rename Columns](#rename-columns)
-  - [Transform DataFrame](#transform-dataframe)
-  - [Calculate Mean](#calculate-mean)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+- [jpandas](#jpandas)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Creating DataFrames](#creating-dataframes)
+    - [From an Array](#from-an-array)
+    - [From an Object](#from-an-object)
+    - [From CSV String](#from-csv-string)
+    - [From JSON String](#from-json-string)
+  - [DataFrame Operations](#dataframe-operations)
+    - [Selection \& Indexing](#selection--indexing)
+    - [Cleaning](#cleaning)
+    - [Group By](#group-by)
+    - [Rename Columns](#rename-columns)
+    - [Transform DataFrame](#transform-dataframe)
+    - [Calculate Mean](#calculate-mean)
+    - [Sorting](#sorting)
+    - [Statistics](#statistics)
+    - [Median/Mode](#medianmode)
+    - [Value Counts](#value-counts)
+    - [Combining (Merge/Join)](#combining-mergejoin)
+    - [Concat](#concat)
+    - [Pivot \& Reshaping](#pivot--reshaping)
+    - [Export / Conversion](#export--conversion)
+    - [JS-friendly Helpers](#js-friendly-helpers)
+    - [Types](#types)
+  - [Series Operations](#series-operations)
+    - [Series Selection](#series-selection)
+    - [Series Transform](#series-transform)
+    - [Series Statistics](#series-statistics)
+    - [Series Value Counts](#series-value-counts)
+  - [Compatibility](#compatibility)
+  - [Contributing](#contributing)
+  - [License](#license)
+  - [Contact](#contact)
 
 ## Installation
 
@@ -45,118 +61,309 @@ yarn add jpandas
 
 Here’s a quick example of how to use the DataFrame Library in your project:
 
-```javascript
-import DataFrame from 'jpandas';
+```ts
+import { DataFrame, Series } from 'jpandas';
 
-const data = [
-    { Name: 'Ankit', Age: 23, University: 'BHU' },
-    { Name: 'Aishwarya', Age: 21, University: 'JNU' }
-];
+// From JSON
+const df = DataFrame.fromJSON([
+  { a: 1, b: 2 },
+  { a: 3, b: 4 },
+]);
 
-const df = new DataFrame(data);
-console.log(df.getRowCount()); // Outputs: 2
+// From CSV
+const csv = `a,b\n1,2\n3,4`;
+const dfCsv = DataFrame.fromCSV(csv);
+
+// Exploration
+console.log(df.shape); // [2, 2]
+console.log(df.columns); // ['a','b']
+console.log(df.head(1).toJSON()); // [{ a: 1, b: 2 }]
+console.log(df.tail(1).toJSON()); // [{ a: 3, b: 4 }]
+
+// Selection
+console.log(df.col('a').toArray()); // [1, 3]
+console.log(df.select(['b']).toJSON()); // [{ b: 2 }, { b: 4 }]
+console.log(df.iloc(0).toJSON()); // [{ a: 1, b: 2 }]
+console.log(df.iloc(0, 2).toJSON()); // slice rows [0,2)
+
+// Stats
+console.log(df.sum('a')); // 4
+console.log(df.mean('b')); // 3
+console.log(df.min('a')); // 1
+console.log(df.max('b')); // 4
+console.log(df.describe()); // { a: { count, mean, min, max }, b: { ... } }
+
+// Series
+const s = new Series([1, 2, 3], 's');
+console.log(s.head(2).toArray()); // [1,2]
+console.log(s.sum()); // 6
+console.log(s.describe()); // { count: 3, mean: 2, min: 1, max: 3 }
 ```
 
 ## Creating DataFrames
 
 ### From an Array
 
-You can create a DataFrame from a 2D array:
+```ts
+import { DataFrame } from 'jpandas';
 
-```javascript
-const data = [
-    [1, 4, 7],
-    [2, 5, 8],
-    [3, 6, 9]
+const rows = [
+  { a: 1, b: 2 },
+  { a: 3, b: 4 },
 ];
-const df = new DataFrame(data);
-console.log(df.getRowCount()); // Outputs: 3
+
+// fromArray is an alias of fromJSON
+const df = DataFrame.fromArray(rows);
 ```
 
 ### From an Object
 
-You can also create a DataFrame from an object where keys are column names:
+Currently, DataFrame expects an array of row objects. If you have a column-oriented object, convert it first:
 
-```javascript
-const data = {
-    Name: ['Ankit', 'Aishwarya', 'Shaurya', 'Shivangi'],
-    Age: [23, 21, 22, 21],
-    University: ['BHU', 'JNU', 'DU', 'BHU']
-};
-const df = new DataFrame(data);
-console.log(df.getValue(0, 'Name')); // Outputs: 'Ankit'
+```ts
+const columns = { a: [1, 3], b: [2, 4] };
+const rows = columns.a.map((_, i) => ({ a: columns.a[i], b: columns.b[i] }));
+const df = DataFrame.fromJSON(rows);
 ```
 
 ### From CSV String
 
-To create a DataFrame from a CSV string:
+```ts
+import { DataFrame } from 'jpandas';
 
-```javascript
-const csvData = `Name,Age,University\nAnkit,23,BHU\nAishwarya,21,JNU`;
-const df = new DataFrame(csvData);
-console.log(df.getValue(1, 'Age')); // Outputs: 21
+const csv = `a,b\n1,2\n3,4`;
+const df = DataFrame.fromCSV(csv);
 ```
 
 ### From JSON String
 
-You can also create a DataFrame from a JSON string:
+```ts
+import { DataFrame } from 'jpandas';
 
-```javascript
-const jsonString = `[{"Name": "Ankit", "Age": 23, "University": "BHU"}, {"Name": "Aishwarya", "Age": 21, "University": "JNU"}]`;
-const df = new DataFrame(JSON.parse(jsonString));
-console.log(df.getValue(1, 'University')); // Outputs: 'JNU'
+const json = '[{"a":1,"b":2},{"a":3,"b":4}]';
+const df = DataFrame.fromJSON(JSON.parse(json));
 ```
 
 ## DataFrame Operations
 
+### Selection & Indexing
+
+```ts
+// Columns
+df.col('a').toArray();
+df.select(['a', 'b']).toJSON();
+
+// Row indexing (iloc)
+df.iloc(0).toJSON();
+df.iloc(0, 2).toJSON();
+
+// JS-friendly
+df.getRowsByIndex(1, 3).toJSON();
+df.getRowsByCondition(row => (row.a as number) > 1).toJSON();
+df.filter(row => (row.b as number) % 2 === 0).toJSON();
+```
+
+### Cleaning
+
+```ts
+df.dropna();                    // drop rows with any NA
+df.dropna({ axis: 1 });         // drop columns with any NA
+df.dropna({ subset: ['a'] });   // consider only selected columns
+
+df.fillna(0);                   // fill across all columns
+df.fillna(0, { subset: ['a'] });
+
+df.drop(['b']);                 // drop single or multiple columns
+df.drop({ columns: ['b', 'c'], index: [0] });
+
+df.rename({ a: 'A', b: 'B' });
+```
+
 ### Group By
 
-Group your DataFrame by a specific column:
+```ts
+const sales = DataFrame.fromJSON([
+  { region: 'N', prod: 'A', qty: 2 },
+  { region: 'N', prod: 'B', qty: 1 },
+  { region: 'S', prod: 'A', qty: 3 },
+]);
 
-```javascript
-const grouped = df.groupBy('University');
-console.log(Object.keys(grouped).length); // Outputs: number of unique universities
+const grouped = sales.groupby(['region', 'prod']).sum();
 ```
 
 ### Rename Columns
 
-You can rename columns easily:
-
-```javascript
-const renamedDf = df.rename({ a: 'x', b: 'y' });
-console.log(renamedDf.getColumns()); // Outputs: ['x', 'y', 'c']
+```ts
+const df = DataFrame.fromJSON([{ a: 1, b: 2 }]);
+const renamed = df.rename({ a: 'A', b: 'B' });
 ```
 
 ### Transform DataFrame
 
-Transform your DataFrame using a custom function:
+```ts
+const df = DataFrame.fromJSON([
+  { a: 1, b: 2 },
+  { a: 3, b: 4 },
+]);
 
-```javascript
-const transformedDf = df.transform(row => ({
-    FullName: row.Name,
-    Age: row.Age + 1
-}));
-console.log(transformedDf.getValue(0, 'FullName')); // Outputs: 'Ankit'
+// Add computed column
+const withC = df.assign({ c: (row) => (row.a as number) + (row.b as number) });
+
+// Row-wise apply
+const applied = df.apply((row) => ({ ...row, d: 1 }));
+
+// Column-wise map
+const mapped = df.mapColumns((v, c) => (c === 'a' && typeof v === 'number' ? (v as number) * 10 : v));
 ```
 
 ### Calculate Mean
+### Sorting
 
-Calculate the mean of a numeric column:
+```ts
+df.sortValues('a');
+df.sortValues(['a', 'b'], { ascending: [true, false], naPosition: 'last' });
+```
 
-```javascript
-const meanAge = df.mean('Age');
-console.log(meanAge); // Outputs: average age
+### Statistics
+
+```ts
+df.sum('a');
+df.mean('a');
+df.min('a');
+df.max('a');
+df.describe();
+```
+
+### Median/Mode
+
+```ts
+df.median('a');
+df.mode('a');
+```
+
+### Value Counts
+
+```ts
+// On a column
+df.valueCounts('b');
+df.valueCounts('b', { normalize: true, ascending: true, dropna: false });
+```
+
+### Combining (Merge/Join)
+
+```ts
+left.merge(right, { on: 'id', how: 'left' });
+left.merge(right, { on: 'id', how: 'inner' });
+left.merge(right, { on: 'id', how: 'right' });
+left.merge(right, { on: 'id', how: 'outer', suffixes: ['_L', '_R'] });
+```
+
+### Concat
+
+```ts
+DataFrame.concat([left, left]);               // axis 0 (rows)
+DataFrame.concat([left, right], { axis: 1 }); // axis 1 (columns)
+DataFrame.concat([left, right], { axis: 1, suffixes: ['_l', '_r'] });
+```
+
+### Pivot & Reshaping
+
+```ts
+// Basic pivot
+const wide = tall.pivot({ index: 'city', columns: 'quarter', values: 'sales' });
+
+// Pivot table with aggregation
+tall.pivotTable({ index: 'city', columns: 'quarter', values: 'sales', aggfunc: 'sum' });
+```
+
+### Export / Conversion
+
+```ts
+df.toJSON();                                  // Row[]
+df.toCSV();                                   // CSV string (with header)
+df.toCSV({ delimiter: ';', quote: 'always' });
+
+const s = new Series([1, 2, 3]);
+s.toArray();                                   // number[]
+```
+
+### JS-friendly Helpers
+
+```ts
+// Column-wise transform
+df.mapColumns((v, c) => (c === 'a' && typeof v === 'number' ? v * 10 : v));
+
+// DataFrame.fromArray / toObject
+const df2 = DataFrame.fromArray([{ a: 1 }, { a: 2 }]);
+df2.toObject();
+```
+
+### Types
+
+```ts
+df.getColumnTypes(); // { a: 'number', b: 'number', ... }
+```
+
+## Series Operations
+
+### Series Selection
+
+```ts
+const s = new Series([1, 2, 3, null]);
+s.head(2).toArray();
+s.tail(2).toArray();
+s.iloc(1).toArray();
+```
+
+### Series Transform
+
+```ts
+s.map(v => (typeof v === 'number' ? v * 2 : v)).toArray();
+s.dropna().toArray();
+s.fillna(0).toArray();
+```
+
+### Series Statistics
+
+```ts
+s.sum();
+s.mean();
+s.min();
+s.max();
+s.median();
+s.mode();
+s.describe();
+```
+
+### Series Value Counts
+
+```ts
+s.valueCounts({ normalize: true, ascending: true, dropna: false });
+```
+
+## Compatibility
+
+- ESM: `import { DataFrame, Series } from 'jpandas'`
+- CJS: `const { DataFrame, Series } = require('jpandas')`
+- Browser: include `dist/index.global.js` and use `window.jpandas`
+- Tree-shaking: package sets `sideEffects: false`
+
+```ts
+const df = DataFrame.fromJSON([
+  { a: 1, b: 2 },
+  { a: 3, b: 4 },
+]);
+
+df.mean('a'); // 2
 ```
 
 ## Contributing
 
 ## License
 
-- BSD-3-Clause © [Rajnish Singh](https://github.com/rajnish93)
+- MIT © [Rajnish Singh](https://github.com/rajnish93)
 
 ## Contact
 
-<div align="left">
-    <p><a href="https://github.com/rajnish93"><img alt="GitHub @rajnish93" align="center" src="https://img.shields.io/badge/GITHUB-gray.svg?colorB=6cc644&style=flat" /></a>&nbsp;<small><strong>(follow)</strong> To stay up to date on free & open-source software</small></p>
-    <p><a href="https://www.linkedin.com/in/krajnishsingh/"><img alt="LinkedIn @krajnishsingh" align="center" src="https://img.shields.io/badge/LINKEDIN-gray.svg?colorB=0077b5&style=flat" /></a>&nbsp;<small><strong>(connect)</strong> On the LinkedIn profile</small></p>
-</div>
+- [![GitHub @rajnish93](https://img.shields.io/badge/GITHUB-gray.svg?colorB=6cc644&style=flat)](https://github.com/rajnish93) (follow to stay up to date on OSS)
+- [![LinkedIn @krajnishsingh](https://img.shields.io/badge/LINKEDIN-gray.svg?colorB=0077b5&style=flat)](https://www.linkedin.com/in/krajnishsingh/) (connect on LinkedIn)
