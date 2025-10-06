@@ -4,24 +4,24 @@
   "description": "Lightweight TypeScript DataFrame/Series inspired by pandas",
   "type": "module",
   "keywords": [
-		"jpandas",
-		"pandas",
-		"dataFrame",
-		"series",
-		"data analysis",
-		"data-manipulation",
-		"analysis",
-		"indexing",
-		"Rajnish Singh"
-	],
+    "jpandas",
+    "pandas",
+    "dataFrame",
+    "series",
+    "data analysis",
+    "data-manipulation",
+    "analysis",
+    "indexing",
+    "Rajnish Singh"
+  ],
   "repository": "rajnish93/jpandas",
-	"author": {
-		"name": "Rajnish Singh",
-		"url": "https://rajnish.app/"
-	},
+  "author": {
+    "name": "Rajnish Singh",
+    "url": "https://rajnish.app/"
+  },
   "license": "MIT",
   "main": "./dist/index.cjs",
- "devDependencies": {
+  "devDependencies": {
     "@types/node": "^24.3.0",
     "@typescript-eslint/eslint-plugin": "^8.42.0",
     "@typescript-eslint/parser": "^8.42.0",
