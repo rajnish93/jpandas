@@ -1,6 +1,6 @@
 {
   "name": "jpandas",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Lightweight TypeScript DataFrame/Series inspired by pandas",
   "type": "module",
   "keywords": [
