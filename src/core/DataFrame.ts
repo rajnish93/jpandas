@@ -259,6 +259,30 @@ export class DataFrame {
 		return this.rows.map((r) => ({ ...r }));
 	}
 
+	toCSV(options?: { delimiter?: string; header?: boolean; quote?: 'auto' | 'always' | 'never' }): string {
+		const delimiter = options?.delimiter ?? ',';
+		const header = options?.header ?? true;
+		const quote = options?.quote ?? 'auto';
+		const cols = this.columns;
+		const lines: string[] = [];
+		if (header) lines.push(cols.join(delimiter));
+		for (const r of this.rows) {
+			const parts = cols.map((c) => DataFrame.serializeCSVValue(r[c], delimiter, quote));
+			lines.push(parts.join(delimiter));
+		}
+		return lines.join('\n');
+	}
+
+	private static serializeCSVValue(v: Primitive, delimiter: string, quote: 'auto' | 'always' | 'never'): string {
+		if (v === null || v === undefined) return '';
+		let s = v instanceof Date ? v.toISOString() : String(v);
+		const needsQuote = quote === 'always' || (quote === 'auto' && (s.includes(delimiter) || s.includes('"') || /\s/.test(s)));
+		if (needsQuote) {
+			s = '"' + s.replace(/"/g, '""') + '"';
+		}
+		return s;
+	}
+
 	private normalizeIndex(i: number, len: number): number {
 		return i >= 0 ? i : Math.max(0, len + i);
 	}
