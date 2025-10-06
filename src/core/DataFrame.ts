@@ -278,6 +278,176 @@ export class DataFrame {
 		if (typeof a === 'number' && typeof b === 'number') return a - b;
 		return String(a).localeCompare(String(b));
 	}
+
+	// ===== GroupBy =====
+	groupby(by: string | string[]) {
+		const keys = Array.isArray(by) ? by : [by];
+		const groups = new Map<string, { keyValues: Row; rows: Row[] }>();
+		for (const r of this.rows) {
+			const keyValues: Row = {};
+			for (const k of keys) keyValues[k] = r[k];
+			const key = JSON.stringify(keys.map((k) => keyValues[k]));
+			let g = groups.get(key);
+			if (!g) {
+				g = { keyValues, rows: [] };
+				groups.set(key, g);
+			}
+			g.rows.push(r);
+		}
+		const numericCols = this.columns.filter((c) => this.rows.some((r) => typeof r[c] === 'number'));
+		const aggregate = (fn: (values: number[]) => number | null) => {
+			const out: Row[] = [];
+			for (const { keyValues, rows } of groups.values()) {
+				const row: Row = { ...keyValues };
+				for (const c of numericCols) {
+					const values = rows.map((r) => r[c]).filter((v) => typeof v === 'number') as number[];
+					row[c] = fn(values) as Primitive;
+				}
+				out.push(row);
+			}
+			return new DataFrame(out);
+		};
+		return {
+			sum: () => aggregate((vals) => vals.reduce((a, b) => a + b, 0)),
+			mean: () => aggregate((vals) => (vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null)),
+			count: () => new DataFrame(Array.from(groups.values()).map(({ keyValues, rows }) => ({ ...keyValues, count: rows.length }))),
+			min: () => aggregate((vals) => (vals.length ? Math.min(...vals) : null)),
+			max: () => aggregate((vals) => (vals.length ? Math.max(...vals) : null)),
+		};
+	}
+
+	// ===== Merge/Join =====
+	merge(other: DataFrame, options: { on?: string | string[]; leftOn?: string | string[]; rightOn?: string | string[]; how?: 'inner' | 'left' | 'right' | 'outer'; suffixes?: [string, string] } = {}): DataFrame {
+		const how = options.how ?? 'inner';
+		const leftKeys = (options.leftOn ?? options.on) as string | string[] | undefined;
+		const rightKeys = (options.rightOn ?? options.on) as string | string[] | undefined;
+		const lks = Array.isArray(leftKeys) ? leftKeys : leftKeys ? [leftKeys] : [];
+		const rks = Array.isArray(rightKeys) ? rightKeys : rightKeys ? [rightKeys] : lks;
+		if (lks.length !== rks.length) throw new Error('merge: left keys and right keys must have same length');
+		const [lsuf, rsuf] = options.suffixes ?? ['_x', '_y'];
+		const rightIndex = new Map<string, Row[]>();
+		for (const rr of other.rows) {
+			const key = JSON.stringify(rks.map((k) => rr[k]));
+			const arr = rightIndex.get(key);
+			if (arr) arr.push(rr); else rightIndex.set(key, [rr]);
+		}
+		const results: Row[] = [];
+		const matchedRight = new Set<Row>();
+		for (const lr of this.rows) {
+			const key = JSON.stringify(lks.map((k) => lr[k]));
+			const matches = rightIndex.get(key) ?? [];
+			if (matches.length) {
+				for (const rr of matches) {
+					matchedRight.add(rr);
+					results.push(DataFrame.mergeRows(lr, rr, lks, rks, lsuf, rsuf));
+				}
+			} else if (how === 'left' || how === 'outer') {
+				results.push(DataFrame.mergeRows(lr, undefined, lks, rks, lsuf, rsuf));
+			}
+		}
+		if (how === 'right' || how === 'outer') {
+			for (const rr of other.rows) {
+				if (!matchedRight.has(rr)) {
+					results.push(DataFrame.mergeRows(undefined, rr, lks, rks, lsuf, rsuf));
+				}
+			}
+		}
+		return new DataFrame(results);
+	}
+
+	private static mergeRows(left: Row | undefined, right: Row | undefined, lks: string[], rks: string[], lsuf: string, rsuf: string): Row {
+		const out: Row = {};
+		if (left) {
+			for (const [k, v] of Object.entries(left)) {
+				const isKey = lks.includes(k);
+				const collide = right && Object.prototype.hasOwnProperty.call(right, k) && !rks.includes(k);
+				out[collide && !isKey ? k + lsuf : k] = v;
+			}
+		}
+		if (right) {
+			for (const [k, v] of Object.entries(right)) {
+				const isKey = rks.includes(k);
+				const collide = left && Object.prototype.hasOwnProperty.call(left, k) && !lks.includes(k);
+				const name = collide && !isKey ? k + rsuf : k;
+				if (!(name in out)) out[name] = v; else out[name] = v;
+			}
+		}
+		return out;
+	}
+
+	// ===== Concat =====
+	static concat(frames: DataFrame[], options?: { axis?: 0 | 1; suffixes?: string[] }): DataFrame {
+		const axis = options?.axis ?? 0;
+		if (axis === 0) {
+			const allCols = new Set<string>();
+			for (const f of frames) f.columns.forEach((c) => allCols.add(c));
+			const rows: Row[] = [];
+			for (const f of frames) {
+				for (const r of f.rows) {
+					const o: Row = {};
+					for (const c of allCols) o[c] = r[c];
+					rows.push(o);
+				}
+			}
+			return new DataFrame(rows);
+		}
+		// axis=1: column-wise by index alignment
+		const suffixes = options?.suffixes ?? frames.map((_, i) => `_${i}`);
+		const maxLen = Math.max(...frames.map((f) => f.rows.length), 0);
+		const rows: Row[] = [];
+		for (let i = 0; i < maxLen; i++) {
+			const o: Row = {};
+			for (let fi = 0; fi < frames.length; fi++) {
+				const f = frames[fi]!;
+				const r = f.rows[i];
+				if (!r) continue;
+				for (const [k, v] of Object.entries(r)) {
+					if (Object.prototype.hasOwnProperty.call(o, k)) o[k + suffixes[fi]!] = v; else o[k] = v;
+				}
+			}
+			rows.push(o);
+		}
+		return new DataFrame(rows);
+	}
+
+	// ===== Pivot / Pivot Table =====
+	pivot(options: { index: string; columns: string; values: string }): DataFrame {
+		const { index, columns, values } = options;
+		const rowKeys = Array.from(new Set(this.rows.map((r) => r[index])));
+		const colKeys = Array.from(new Set(this.rows.map((r) => r[columns])));
+		const lookup = new Map<string, Primitive>();
+		for (const r of this.rows) {
+			const key = JSON.stringify([r[index], r[columns]]);
+			lookup.set(key, r[values]);
+		}
+		const out: Row[] = [];
+		for (const rk of rowKeys) {
+			const row: Row = { [index]: rk };
+			for (const ck of colKeys) {
+				const key = JSON.stringify([rk, ck]);
+				row[String(ck)] = lookup.get(key);
+			}
+			out.push(row);
+		}
+		return new DataFrame(out);
+	}
+
+	pivotTable(options: { index: string; columns: string; values: string; aggfunc?: 'sum' | 'mean' | 'count' | 'min' | 'max' }): DataFrame {
+		const { index, columns, values } = options;
+		const agg = options.aggfunc ?? 'mean';
+		// group by [index, columns]
+		const grouped = this.groupby([index, columns]);
+		let df: DataFrame;
+		switch (agg) {
+			case 'sum': df = grouped.sum(); break;
+			case 'count': df = grouped.count(); break;
+			case 'min': df = grouped.min(); break;
+			case 'max': df = grouped.max(); break;
+			default: df = grouped.mean(); break;
+		}
+		// Now pivot
+		return df.pivot({ index, columns, values });
+	}
 }
 
 
