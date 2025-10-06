@@ -1,8 +1,9 @@
 {
-	"name": "jpandas",
-	"version": "1.0.0",
-	"description": "A lightweight JavaScript package for working with tabular data, inspired by pandas in Python.",
-	"keywords": [
+  "name": "jpandas",
+  "version": "1.0.0",
+  "description": "Lightweight TypeScript DataFrame/Series inspired by pandas",
+  "type": "module",
+  "keywords": [
 		"jpandas",
 		"pandas",
 		"dataFrame",
@@ -13,19 +14,42 @@
 		"indexing",
 		"Rajnish Singh"
 	],
-	"repository": "rajnish93/jpandas",
+  "repository": "rajnish93/jpandas",
 	"author": {
 		"name": "Rajnish Singh",
 		"url": "https://rajnish.app/"
 	},
-	"license": "BSD-3-Clause",
-	"main": "src/index.js",
-	"devDependencies": {
-		"jest": "^29.5.0",
-		"prettier": "^2.8.8"
-	},
-	"scripts": {
-		"test": "jest",
-		"format": "prettier --write \"./**/*.{js,json}\""
-	}
+  "license": "MIT",
+  "main": "./dist/index.cjs",
+ "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
+    "eslint": "^9.34.0",
+    "prettier": "^3.6.2",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    }
+  },
+  "unpkg": "dist/index.global.js",
+  "jsdelivr": "dist/index.global.js",
+  "files": [
+    "dist"
+  ],
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
 }
