@@ -9,7 +9,7 @@ export interface SeriesDescribe {
 
 export class Series<T extends Primitive = Primitive> {
 	private readonly data: T[];
-	readonly name?: string;
+	readonly name: string | undefined;
 
 	constructor(data: T[] | ReadonlyArray<T>, name?: string) {
 		this.data = Array.from(data);
@@ -38,7 +38,9 @@ export class Series<T extends Primitive = Primitive> {
 
 	iloc(start: number, end?: number): Series<T> {
 		if (end === undefined) {
-			return new Series([this.data[this.normalizeIndex(start)]], this.name);
+			const idx = this.normalizeIndex(start);
+			const value = this.data[idx];
+			return new Series(value === undefined ? ([] as T[]) : [value], this.name);
 		}
 		const [s, e] = this.normalizeSlice(start, end);
 		return new Series(this.data.slice(s, e), this.name);
@@ -48,31 +50,32 @@ export class Series<T extends Primitive = Primitive> {
 		return this.data[this.normalizeIndex(i)];
 	}
 
-	sum(this: Series<number>): number {
-		return this.data.reduce((acc, v) => acc + (typeof v === 'number' ? v : 0), 0);
+	sum(): number {
+		return this.data.reduce((acc, v) => acc + (typeof v === 'number' ? (v as number) : 0), 0);
 	}
 
-	mean(this: Series<number>): number | null {
+	mean(): number | null {
 		if (this.data.length === 0) return null;
 		const numeric = this.data.filter((v) => typeof v === 'number') as number[];
 		if (numeric.length === 0) return null;
 		return numeric.reduce((a, b) => a + b, 0) / numeric.length;
 	}
 
-	min(this: Series<number>): number | null {
+	min(): number | null {
 		const numeric = this.data.filter((v) => typeof v === 'number') as number[];
 		if (numeric.length === 0) return null;
 		return Math.min(...numeric);
 	}
 
-	max(this: Series<number>): number | null {
+	max(): number | null {
 		const numeric = this.data.filter((v) => typeof v === 'number') as number[];
 		if (numeric.length === 0) return null;
 		return Math.max(...numeric);
 	}
 
-	describe(this: Series<number>): SeriesDescribe {
-		const count = this.data.filter((v) => typeof v === 'number').length;
+	describe(): SeriesDescribe {
+		const numeric = this.data.filter((v) => typeof v === 'number') as number[];
+		const count = numeric.length;
 		return {
 			count,
 			mean: this.mean(),

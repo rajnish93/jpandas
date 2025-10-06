@@ -1,6 +1,6 @@
 <h4 align="center">
 
-📟 A lightweight JavaScript package for working with tabular data, inspired by pandas in Python..
+📟 A lightweight TypeScript library for tabular data manipulation, inspired by Python's pandas. Supports DataFrame/Series APIs and works in both Node.js and the browser.
 
 [![npm version](https://img.shields.io/npm/v/jpandas.svg?style=flat-square)](https://www.npmjs.com/package/jpandas)
 [![DOWNLOADS](https://img.shields.io/npm/dt/jpandas.svg?label=DOWNLOADS&style=flat)](https://www.npmjs.com/package/jpandas)
@@ -45,114 +45,50 @@ yarn add jpandas
 
 Here’s a quick example of how to use the DataFrame Library in your project:
 
-```javascript
-import DataFrame from 'jpandas';
+```ts
+import { DataFrame, Series } from 'ts-pandas-lite';
 
-const data = [
-    { Name: 'Ankit', Age: 23, University: 'BHU' },
-    { Name: 'Aishwarya', Age: 21, University: 'JNU' }
-];
+// From JSON
+const df = DataFrame.fromJSON([
+  { a: 1, b: 2 },
+  { a: 3, b: 4 },
+]);
 
-const df = new DataFrame(data);
-console.log(df.getRowCount()); // Outputs: 2
-```
+// From CSV
+const csv = `a,b\n1,2\n3,4`;
+const dfCsv = DataFrame.fromCSV(csv);
 
-## Creating DataFrames
+// Exploration
+console.log(df.shape); // [2, 2]
+console.log(df.columns); // ['a','b']
+console.log(df.head(1).toJSON()); // [{ a: 1, b: 2 }]
+console.log(df.tail(1).toJSON()); // [{ a: 3, b: 4 }]
 
-### From an Array
+// Selection
+console.log(df.col('a').toArray()); // [1, 3]
+console.log(df.select(['b']).toJSON()); // [{ b: 2 }, { b: 4 }]
+console.log(df.iloc(0).toJSON()); // [{ a: 1, b: 2 }]
+console.log(df.iloc(0, 2).toJSON()); // slice rows [0,2)
 
-You can create a DataFrame from a 2D array:
+// Stats
+console.log(df.sum('a')); // 4
+console.log(df.mean('b')); // 3
+console.log(df.min('a')); // 1
+console.log(df.max('b')); // 4
+console.log(df.describe()); // { a: { count, mean, min, max }, b: { ... } }
 
-```javascript
-const data = [
-    [1, 4, 7],
-    [2, 5, 8],
-    [3, 6, 9]
-];
-const df = new DataFrame(data);
-console.log(df.getRowCount()); // Outputs: 3
-```
-
-### From an Object
-
-You can also create a DataFrame from an object where keys are column names:
-
-```javascript
-const data = {
-    Name: ['Ankit', 'Aishwarya', 'Shaurya', 'Shivangi'],
-    Age: [23, 21, 22, 21],
-    University: ['BHU', 'JNU', 'DU', 'BHU']
-};
-const df = new DataFrame(data);
-console.log(df.getValue(0, 'Name')); // Outputs: 'Ankit'
-```
-
-### From CSV String
-
-To create a DataFrame from a CSV string:
-
-```javascript
-const csvData = `Name,Age,University\nAnkit,23,BHU\nAishwarya,21,JNU`;
-const df = new DataFrame(csvData);
-console.log(df.getValue(1, 'Age')); // Outputs: 21
-```
-
-### From JSON String
-
-You can also create a DataFrame from a JSON string:
-
-```javascript
-const jsonString = `[{"Name": "Ankit", "Age": 23, "University": "BHU"}, {"Name": "Aishwarya", "Age": 21, "University": "JNU"}]`;
-const df = new DataFrame(JSON.parse(jsonString));
-console.log(df.getValue(1, 'University')); // Outputs: 'JNU'
-```
-
-## DataFrame Operations
-
-### Group By
-
-Group your DataFrame by a specific column:
-
-```javascript
-const grouped = df.groupBy('University');
-console.log(Object.keys(grouped).length); // Outputs: number of unique universities
-```
-
-### Rename Columns
-
-You can rename columns easily:
-
-```javascript
-const renamedDf = df.rename({ a: 'x', b: 'y' });
-console.log(renamedDf.getColumns()); // Outputs: ['x', 'y', 'c']
-```
-
-### Transform DataFrame
-
-Transform your DataFrame using a custom function:
-
-```javascript
-const transformedDf = df.transform(row => ({
-    FullName: row.Name,
-    Age: row.Age + 1
-}));
-console.log(transformedDf.getValue(0, 'FullName')); // Outputs: 'Ankit'
-```
-
-### Calculate Mean
-
-Calculate the mean of a numeric column:
-
-```javascript
-const meanAge = df.mean('Age');
-console.log(meanAge); // Outputs: average age
+// Series
+const s = new Series([1, 2, 3], 's');
+console.log(s.head(2).toArray()); // [1,2]
+console.log(s.sum()); // 6
+console.log(s.describe()); // { count: 3, mean: 2, min: 1, max: 3 }
 ```
 
 ## Contributing
 
 ## License
 
-- BSD-3-Clause © [Rajnish Singh](https://github.com/rajnish93)
+- MIT © [Rajnish Singh](https://github.com/rajnish93)
 
 ## Contact
 

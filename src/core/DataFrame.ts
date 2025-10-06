@@ -24,11 +24,11 @@ export class DataFrame {
 		const delimiter = options?.delimiter ?? ',';
 		const lines = csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
 		if (lines.length === 0) return new DataFrame([]);
-		const header = options?.header ?? lines[0].split(delimiter).map((h) => h.trim());
+		const header = options?.header ?? lines[0]!.split(delimiter).map((h) => h.trim());
 		const startIndex = options?.header ? 0 : 1;
 		const rows: Row[] = [];
 		for (let i = startIndex; i < lines.length; i++) {
-			const parts = DataFrame.parseCSVLine(lines[i], delimiter);
+			const parts = DataFrame.parseCSVLine(lines[i]!, delimiter);
 			const row: Row = {};
 			header.forEach((name, idx) => {
 				row[name] = DataFrame.autoType(parts[idx]);
@@ -71,7 +71,7 @@ export class DataFrame {
 		if (trimmed === 'true') return true;
 		if (trimmed === 'false') return false;
 		const num = Number(trimmed);
-		if (!Number.isNaN(num)) return num;
+		if (!Number.isNaN(num) && /^[-+]?\d*\.?\d+(e[-+]?\d+)?$/i.test(trimmed)) return num;
 		const date = new Date(trimmed);
 		if (!isNaN(date.getTime())) return date;
 		return trimmed;
@@ -100,7 +100,8 @@ export class DataFrame {
 	iloc(rowStart: number, rowEnd?: number): DataFrame {
 		if (rowEnd === undefined) {
 			const idx = this.normalizeIndex(rowStart, this.rows.length);
-			return new DataFrame([this.rows[idx]]);
+			const row = this.rows[idx];
+			return new DataFrame(row ? [row] : []);
 		}
 		const [s, e] = this.normalizeSlice(rowStart, rowEnd, this.rows.length);
 		return new DataFrame(this.rows.slice(s, e));
